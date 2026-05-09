@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import type { SortOption } from "@/types";
 import { cn } from "@/lib/utils";
@@ -28,13 +28,13 @@ export default function SortDropdown({ value, onChange }: SortDropdownProps) {
   const handleSelect = useCallback((v: SortOption) => { onChange(v); setOpen(false); }, [onChange]);
 
   // Close on outside click
-  useState(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  });
+  }, []);
 
   return (
     <div ref={ref} className="relative inline-block">

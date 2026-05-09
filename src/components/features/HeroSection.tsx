@@ -1,7 +1,8 @@
-import heroBg from "@/assets/hero-bg.jpg";
 import SearchForm from "@/components/features/SearchForm";
 
 import { cn } from "@/lib/utils";
+
+const heroBg = "/hero-bg.jpg";
 
 const HERO_TAGS = [
   { id: "budget", label: "₹1000 - ₹ 3000" },

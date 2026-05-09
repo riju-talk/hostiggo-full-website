@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Globe, IndianRupee, Facebook, Twitter, Instagram, Home } from "lucide-react";
 
 const footerSections = [

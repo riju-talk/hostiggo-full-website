@@ -1,61 +1,81 @@
-import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
-  Globe, ChevronDown, IndianRupee, Menu, X,
-  MessageCircle, Heart, Clock, User, Settings,
-  Star, HelpCircle, Home, LogOut, Search, Check
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Globe,
+  ChevronDown,
+  IndianRupee,
+  Menu,
+  X,
+  MessageCircle,
+  Heart,
+  Clock,
+  User,
+  Settings,
+  Star,
+  HelpCircle,
+  Home,
+  LogOut,
+  Search,
+  Check,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const CURRENCIES = [
-  { code: "INR", symbol: "₹", name: "Indian Rupee" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
-  { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
-  { code: "THB", symbol: "฿", name: "Thai Baht" },
-  { code: "MYR", symbol: "RM", name: "Malaysian Ringgit" },
-  { code: "HKD", symbol: "HK$", name: "Hong Kong Dollar" },
-  { code: "CHF", symbol: "Fr", name: "Swiss Franc" },
-  { code: "NZD", symbol: "NZ$", name: "New Zealand Dollar" },
-  { code: "SEK", symbol: "kr", name: "Swedish Krona" },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+  { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+  { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+  { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+  { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
 ];
 
 // Mock auth state — replace with real context when backend is ready
 const IS_SIGNED_IN = true;
-const USER = { name: "Bajpai Lehri", avatar: "https://i.pravatar.cc/150?img=11" };
+const USER = {
+  name: 'Bajpai Lehri',
+  avatar: 'https://i.pravatar.cc/150?img=11',
+};
 
 function CurrencyDropdown() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(CURRENCIES[0]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
-        setSearch("");
+        setSearch('');
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const filtered = CURRENCIES.filter(
-    c =>
+    (c) =>
       c.code.toLowerCase().includes(search.toLowerCase()) ||
-      c.name.toLowerCase().includes(search.toLowerCase())
+      c.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => { setOpen(v => !v); setSearch(""); }}
+        onClick={() => {
+          setOpen((v) => !v);
+          setSearch('');
+        }}
         className="flex items-center gap-1 text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors text-[13px] font-medium"
       >
         <IndianRupee className="w-3.5 h-3.5" strokeWidth={2} />
@@ -73,7 +93,7 @@ function CurrencyDropdown() {
                 type="text"
                 placeholder="Search"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 bg-transparent text-[13px] text-gray-700 placeholder:text-gray-400 outline-none"
               />
             </div>
@@ -82,25 +102,36 @@ function CurrencyDropdown() {
           {/* Currency list */}
           <div className="max-h-[240px] overflow-y-auto scrollbar-hide pb-2">
             {filtered.length === 0 ? (
-              <p className="px-4 py-3 text-[12px] text-gray-400 text-center">No currencies found</p>
+              <p className="px-4 py-3 text-[12px] text-gray-400 text-center">
+                No currencies found
+              </p>
             ) : (
-              filtered.map(cur => (
+              filtered.map((cur) => (
                 <button
                   key={cur.code}
-                  onClick={() => { setSelected(cur); setOpen(false); setSearch(""); }}
+                  onClick={() => {
+                    setSelected(cur);
+                    setOpen(false);
+                    setSearch('');
+                  }}
                   className={cn(
-                    "w-full flex items-center justify-between px-4 py-2.5 text-[13px] transition-colors",
+                    'w-full flex items-center justify-between px-4 py-2.5 text-[13px] transition-colors',
                     cur.code === selected.code
-                      ? "text-blue-600 font-semibold bg-blue-50/50"
-                      : "text-gray-700 hover:bg-gray-50"
+                      ? 'text-blue-600 font-semibold bg-blue-50/50'
+                      : 'text-gray-700 hover:bg-gray-50',
                   )}
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="w-5 text-center text-[14px] font-semibold text-gray-500">{cur.symbol}</span>
+                    <span className="w-5 text-center text-[14px] font-semibold text-gray-500">
+                      {cur.symbol}
+                    </span>
                     <span>{cur.code}</span>
                   </span>
                   {cur.code === selected.code && (
-                    <Check className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
+                    <Check
+                      className="w-4 h-4 text-blue-600"
+                      strokeWidth={2.5}
+                    />
                   )}
                 </button>
               ))
@@ -122,18 +153,38 @@ interface MenuItem {
 
 const MENU_GROUPS: MenuItem[][] = [
   [
-    { icon: <MessageCircle className="w-4 h-4" />, label: "Chats", to: "#" },
-    { icon: <Heart className="w-4 h-4" />, label: "Wishlists", to: "/wishlist" },
-    { icon: <Clock className="w-4 h-4" />, label: "Memories", to: "/my-memories" },
-    { icon: <User className="w-4 h-4" />, label: "Profile", to: "#" },
+    { icon: <MessageCircle className="w-4 h-4" />, label: 'Chats', to: '#' },
+    {
+      icon: <Heart className="w-4 h-4" />,
+      label: 'Wishlists',
+      to: '/wishlist',
+    },
+    {
+      icon: <Clock className="w-4 h-4" />,
+      label: 'Memories',
+      to: '/my-memories',
+    },
+    { icon: <User className="w-4 h-4" />, label: 'Profile', to: '#' },
   ],
   [
-    { icon: <Settings className="w-4 h-4" />, label: "Account Settings", to: "#" },
-    { icon: <Star className="w-4 h-4" />, label: "My reviews", to: "#" },
-    { icon: <HelpCircle className="w-4 h-4" />, label: "Customer support", to: "#" },
+    {
+      icon: <Settings className="w-4 h-4" />,
+      label: 'Account Settings',
+      to: '#',
+    },
+    { icon: <Star className="w-4 h-4" />, label: 'My reviews', to: '#' },
+    {
+      icon: <HelpCircle className="w-4 h-4" />,
+      label: 'Customer support',
+      to: '#',
+    },
   ],
   [
-    { icon: <Home className="w-4 h-4 text-amber-500" />, label: "Host & Earn", to: "#" },
+    {
+      icon: <Home className="w-4 h-4 text-amber-500" />,
+      label: 'Host & Earn',
+      to: '#',
+    },
   ],
 ];
 
@@ -141,31 +192,43 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Close profile dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
         setProfileOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   return (
-    <nav className="bg-white sticky top-0 z-50 border-b border-gray-50 shadow-[0_8px_30px_rgba(59,130,246,0.12)]">
+    <nav className="bg-white sticky top-0 z-50 border-b border-gray-50 shadow-[0_8px_30px_rgba(59,130,246,0.12)] flex-shrink-0">
       <div className="container-main">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 group">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 flex-shrink-0 group"
+          >
             <div className="w-9 h-9 bg-[#004772] rounded-full flex items-center justify-center shadow-sm transition-transform group-hover:scale-105">
-              <span className="text-white font-bold text-[18px] leading-none">H</span>
+              <span className="text-white font-bold text-[18px] leading-none">
+                H
+              </span>
             </div>
             <div className="flex items-baseline">
-              <span className="font-black text-[#374151] text-[17px] tracking-wider uppercase">Hosti</span>
-              <span className="font-black text-[#0086D8] text-[17px] tracking-wider uppercase">ggo</span>
+              <span className="font-black text-[#374151] text-[17px] tracking-wider uppercase">
+                Hosti
+              </span>
+              <span className="font-black text-[#0086D8] text-[17px] tracking-wider uppercase">
+                ggo
+              </span>
             </div>
           </Link>
 
@@ -182,7 +245,7 @@ export default function Navbar() {
               <>
                 <button
                   className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors ml-1"
-                  onClick={() => navigate("/list-property")}
+                  onClick={() => router.push('/list-property')}
                 >
                   List your property
                 </button>
@@ -190,20 +253,24 @@ export default function Navbar() {
                 {/* Avatar + Dropdown */}
                 <div ref={profileRef} className="relative ml-2">
                   <button
-                    onClick={() => setProfileOpen(v => !v)}
+                    onClick={() => setProfileOpen((v) => !v)}
                     className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-offset-1 ring-transparent hover:ring-blue-400 transition-all"
                   >
-                    <img src={USER.avatar} alt={USER.name} className="w-full h-full object-cover" />
+                    <img
+                      src={USER.avatar}
+                      alt={USER.name}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
 
                   {/* Dropdown */}
                   {profileOpen && (
                     <div
                       className={cn(
-                        "absolute right-0 top-[calc(100%+10px)] w-[220px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden",
-                        "animate-fade-in-down origin-top-right"
+                        'absolute right-0 top-[calc(100%+10px)] w-[220px] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden',
+                        'animate-fade-in-down origin-top-right',
                       )}
-                      style={{ animation: "fadeInDown 0.18s ease both" }}
+                      style={{ animation: 'fadeInDown 0.18s ease both' }}
                     >
                       {MENU_GROUPS.map((group, gi) => (
                         <div key={gi}>
@@ -212,11 +279,16 @@ export default function Navbar() {
                             {group.map((item) => (
                               <Link
                                 key={item.label}
-                                to={item.to ?? "#"}
-                                onClick={() => { item.action?.(); setProfileOpen(false); }}
+                                href={item.to ?? '#'}
+                                onClick={() => {
+                                  item.action?.();
+                                  setProfileOpen(false);
+                                }}
                                 className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                               >
-                                <span className="text-gray-400">{item.icon}</span>
+                                <span className="text-gray-400">
+                                  {item.icon}
+                                </span>
                                 <span>{item.label}</span>
                               </Link>
                             ))}
@@ -228,7 +300,10 @@ export default function Navbar() {
                       <div className="h-px bg-gray-100 mx-3" />
                       <div className="p-3">
                         <button
-                          onClick={() => { setProfileOpen(false); navigate("/signin"); }}
+                          onClick={() => {
+                            setProfileOpen(false);
+                            router.push('/signin');
+                          }}
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
@@ -243,18 +318,18 @@ export default function Navbar() {
               <>
                 <button
                   className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors text-[13px] font-medium ml-1"
-                  onClick={() => navigate("/signin")}
+                  onClick={() => router.push('/signin')}
                 >
                   Sign in
                 </button>
                 <button
                   className="bg-[#005a9c] hover:bg-[#004a80] active:bg-[#003a66] text-white px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors ml-1 shadow-sm"
-                  onClick={() => navigate("/signin")}
+                  onClick={() => router.push('/signin')}
                 >
                   New user
                 </button>
                 <button
-                  onClick={() => navigate("/list-property")}
+                  onClick={() => router.push('/list-property')}
                   className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors ml-1"
                 >
                   List your property
@@ -268,7 +343,11 @@ export default function Navbar() {
             className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
 
@@ -283,15 +362,26 @@ export default function Navbar() {
             </button>
             {IS_SIGNED_IN ? (
               <>
-                <Link to="/wishlist" onClick={() => setMobileOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-2.5 font-medium">
+                <Link
+                  href="/wishlist"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-2.5 font-medium"
+                >
                   <Heart className="w-4 h-4 text-gray-500" /> Wishlists
                 </Link>
-                <Link to="#" onClick={() => setMobileOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-2.5 font-medium">
+                <Link
+                  href="#"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-2.5 font-medium"
+                >
                   <User className="w-4 h-4 text-gray-500" /> Profile
                 </Link>
                 <div className="px-4 pt-2">
                   <button
-                    onClick={() => { setMobileOpen(false); navigate("/signin"); }}
+                    onClick={() => {
+                      setMobileOpen(false);
+                      router.push('/signin');
+                    }}
                     className="w-full border border-red-200 text-red-500 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-red-50"
                   >
                     <LogOut className="w-4 h-4" /> Sign out
@@ -301,14 +391,20 @@ export default function Navbar() {
             ) : (
               <>
                 <button
-                  onClick={() => { setMobileOpen(false); navigate("/signin"); }}
+                  onClick={() => {
+                    setMobileOpen(false);
+                    router.push('/signin');
+                  }}
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl font-medium"
                 >
                   Sign in
                 </button>
                 <div className="px-4 pt-2 flex gap-2">
                   <button
-                    onClick={() => { setMobileOpen(false); navigate("/signin"); }}
+                    onClick={() => {
+                      setMobileOpen(false);
+                      router.push('/signin');
+                    }}
                     className="flex-1 bg-blue-600 text-white py-2 rounded-xl text-sm font-semibold"
                   >
                     New user

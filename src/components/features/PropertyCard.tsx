@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Heart, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import type { Property } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -13,12 +13,12 @@ const FALLBACK = "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w
 export default function PropertyCard({ property }: PropertyCardProps) {
   const [liked, setLiked] = useState(property.isFavorite ?? false);
   const [imgErr, setImgErr] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div
       className="card-base cursor-pointer group"
-      onClick={() => navigate(`/property/${property.id}`)}
+      onClick={() => router.push(`/property/${property.id}`)}
     >
       {/* Image */}
       <div className="relative overflow-hidden" style={{ height: 170 }}>

@@ -1,0 +1,308 @@
+import type { AmenityItem, Host, Property, Review, SearchFilters } from "@/types";
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop&q=80";
+
+export const AUTH_USER_ID_KEY = "hostiggo:user-id";
+export const AUTH_PHONE_KEY = "hostiggo:phone";
+
+type ApiResult<T> = { data?: T; error?: string };
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+  const payload = (await res.json().catch(() => ({}))) as ApiResult<T>;
+  if (!res.ok || payload.error) {
+    throw new Error(payload.error || `Request failed: ${res.status}`);
+  }
+  return payload.data as T;
+}
+
+const first = <T>(value: T | T[] | null | undefined): T | undefined =>
+  Array.isArray(value) ? value[0] : value ?? undefined;
+
+const mediaUrls = (row: any): string[] => {
+  const media = row?.listing_media ?? row?.media ?? [];
+  const urls = Array.isArray(media)
+    ? media.map((item: any) => item?.media_url).filter(Boolean)
+    : [];
+  const cover = row?.cover_image_url || row?.cover_photo_url || row?.image;
+  return [...new Set([cover, ...urls].filter(Boolean))];
+};
+
+const amenityNames = (row: any): string[] => {
+  const direct = row?.amenity_names;
+  if (Array.isArray(direct)) return direct.filter(Boolean);
+
+  const joined = row?.listing_amenities;
+  if (!Array.isArray(joined)) return [];
+
+  return joined
+    .map((item: any) => item?.amenities?.name || item?.amenity?.name || item?.name)
+    .filter(Boolean);
+};
+
+const boolFromAmenity = (amenities: string[], needle: string) =>
+  amenities.some((item) => item.toLowerCase().includes(needle));
+
+const buildAmenityDetails = (amenities: string[]): AmenityItem[] =>
+  amenities.map((name) => ({
+    name,
+    icon: boolFromAmenity([name], "wifi")
+      ? "wifi"
+      : boolFromAmenity([name], "parking")
+        ? "car"
+        : boolFromAmenity([name], "kitchen")
+          ? "utensils"
+          : boolFromAmenity([name], "air")
+            ? "zap"
+            : "mountain",
+    available: true,
+  }));
+
+const buildReviews = (row: any): Review[] => {
+  const reviews = row?.review ?? row?.reviews ?? [];
+  if (!Array.isArray(reviews)) return [];
+
+  return reviews.map((review: any) => ({
+    id: String(review.review_id ?? review.id ?? crypto.randomUUID()),
+    userName: review.users?.name ?? review.user_name ?? "Guest",
+    userAvatar: review.user_avatar ?? "https://i.pravatar.cc/150",
+    rating: Number(review.rating ?? 0),
+    reviewText: review.comment ?? review.reviewText ?? "",
+    reviewDate: review.reviewed_at ?? review.created_at ?? "",
+  }));
+};
+
+const buildHost = (row: any): Host => ({
+  id: String(row?.host_uuid ?? row?.host?.id ?? ""),
+  name: row?.host?.name ?? "Host",
+  avatar: row?.host?.photo ?? "https://i.pravatar.cc/150",
+  rating: Number(row?.host?.rating ?? 0),
+  tripsHosted: Number(row?.host?.tripsHosted ?? 0),
+  joinDate: row?.host?.joinDate ?? "",
+  responseRate: Number(row?.host?.responseRate ?? 99),
+  responseTime: row?.host?.responseTime ?? "Within a day",
+  isSuperhost: true,
+});
+
+export function mapListingToProperty(input: any): Property {
+  const row = input?.listing ?? input ?? {};
+  const location = row.locations ?? {};
+  const images = mediaUrls(row);
+  const amenities = amenityNames(row);
+  const reviews = buildReviews(row);
+  const rating = Number(row.avg_rating ?? row.rating ?? 0);
+
+  return {
+    id: String(row.listing_id ?? row.id ?? ""),
+    propertyName: row.title ?? row.propertyName ?? "Untitled stay",
+    city: row.district ?? location.district ?? row.city ?? "Unknown",
+    state: row.state ?? location.state ?? row.state_name ?? "",
+    price: Number(row.price_weekday ?? row.price ?? 0),
+    rating: rating || 4.5,
+    reviewCount: Number(row.review_count ?? reviews.length ?? 0),
+    amenities,
+    amenityDetails: buildAmenityDetails(amenities),
+    propertyType: row.property_type ?? row.propertyType ?? "Homestay",
+    images: images.length > 0 ? images : [FALLBACK_IMAGE],
+    maxGuests: Number(row.max_guests ?? row.nom_guests ?? row.total_guests ?? 2),
+    isFavorite: Boolean(row.isFavorite),
+    isNew: Boolean(row.is_new),
+    distanceFromCenter:
+      typeof input?.distance === "number" ? `${(input.distance / 1000).toFixed(1)} km` : row.distance,
+    isInstantBook: row.booking_mode === "auto" || Boolean(row.isInstantBook),
+    freeCancellation: Boolean(row.freeCancellation),
+    breakfast: boolFromAmenity(amenities, "breakfast"),
+    parking: boolFromAmenity(amenities, "parking"),
+    wifi: boolFromAmenity(amenities, "wifi"),
+    ac: boolFromAmenity(amenities, "air") || boolFromAmenity(amenities, "ac"),
+    pool: boolFromAmenity(amenities, "pool"),
+    kitchen: boolFromAmenity(amenities, "kitchen"),
+    balcony: boolFromAmenity(amenities, "balcony"),
+    mountainView: boolFromAmenity(amenities, "mountain"),
+    bedType: row.room_type ?? row.bed_type ?? "Double bed",
+    description: row.description ?? "",
+    coordinates:
+      row.latitude && row.longitude
+        ? { lat: Number(row.latitude), lng: Number(row.longitude) }
+        : undefined,
+    host: buildHost(row),
+    reviews,
+    ratingBreakdown: {
+      cleanliness: rating || 4.5,
+      accuracy: rating || 4.5,
+      communication: rating || 4.5,
+      location: rating || 4.5,
+      checkIn: rating || 4.5,
+      value: rating || 4.5,
+    },
+  };
+}
+
+export function mapWishlistListing(item: any) {
+  const property = mapListingToProperty(item?.listing ?? item);
+  return {
+    id: property.id,
+    name: property.propertyName,
+    location: [property.city, property.state].filter(Boolean).join(", "),
+    rating: property.rating,
+    reviews: property.reviewCount,
+    price: property.price,
+    nights: 2,
+    image: first(property.images) ?? FALLBACK_IMAGE,
+    liked: true,
+    group: item?.category_id ?? "all",
+  };
+}
+
+export function mapBooking(item: any) {
+  const checkIn = new Date(item.start_date);
+  const checkOut = new Date(item.end_date);
+  const status = String(item.booking_label ?? "upcoming").toLowerCase();
+
+  return {
+    id: String(item.booking_id),
+    title: item.listing_title ?? "Booked stay",
+    image: item.cover_photo_url || FALLBACK_IMAGE,
+    location: item.location ?? "",
+    distanceText: item.distanceText ?? "Location available after booking",
+    checkIn,
+    checkOut,
+    status: status === "completed" || status === "cancelled" ? status : "upcoming",
+    coordinates: {
+      lat: Number(item.latitude ?? 22.5937),
+      lng: Number(item.longitude ?? 78.9629),
+    },
+    guests: {
+      adults: Number(item.num_adults ?? 1),
+      children: Number(item.num_children ?? 0),
+      rooms: 1,
+      pets: false,
+    },
+    addons: [
+      { id: "breakfast", label: "Breakfast", emoji: "🍳", price: 500, selected: false },
+      { id: "airport", label: "Airport Pickup", emoji: "🚗", price: 1200, selected: false },
+      { id: "extrabed", label: "Extra Bed", emoji: "🛏️", price: 800, selected: false },
+      { id: "earlycheckin", label: "Early Check-in", emoji: "⏰", price: 600, selected: false },
+    ],
+  };
+}
+
+export const getStoredUserId = () =>
+  typeof window === "undefined" ? null : window.localStorage.getItem(AUTH_USER_ID_KEY);
+
+export const normalizePhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+91${digits}`;
+  if (phone.startsWith("+")) return phone;
+  return `+${digits}`;
+};
+
+const isUuid = (value?: string) =>
+  Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+
+export const api = {
+  hotels: () => request<any[]>("/api/hotels"),
+  hotelsByLocation: (locationId: string | number, limit = 4) =>
+    request<any[]>(`/api/hotels?locationId=${locationId}&limit=${limit}`),
+  locations: (limit = 40, q?: string) => request<any[]>(`/api/locations?limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
+  propertyDetail: (id: string) => request<any>(`/api/hotels/${id}`),
+  search: async (filters: SearchFilters, destination: string, page = 0, pageSize = 20) => {
+    const payload = {
+      page,
+      pageSize,
+      filters: {
+        startDate: null,
+        endDate: null,
+        district: destination?.trim() || undefined,
+        minPrice: filters.priceMin > 0 ? filters.priceMin : undefined,
+        maxPrice: filters.priceMax < 100000 ? filters.priceMax : undefined,
+        totalGuests: undefined,
+        ratings: filters.guestRating != null ? [filters.guestRating] : [],
+        amenities: [] as number[],
+        roomTypes: filters.propertyTypes,
+      },
+    };
+    console.log("[api.search] Request payload:", payload);
+    const result = await request<any[]>("/api/search", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    console.log("[api.search] Response rows:", result?.length);
+    return result;
+  },
+  sendOtp: (phone: string) =>
+    request<any>("/api/auth/otp", {
+      method: "POST",
+      body: JSON.stringify({ action: "send", phone: normalizePhone(phone) }),
+    }),
+  verifyOtp: (phone: string, token: string) =>
+    request<any>("/api/auth/otp", {
+      method: "POST",
+      body: JSON.stringify({ action: "verify", phone: normalizePhone(phone), token }),
+    }),
+  wishlistCategories: (userId: string) =>
+    request<any[]>(`/api/wishlist?resource=categories&userId=${encodeURIComponent(userId)}`),
+  wishlistListings: (userId: string, categoryId?: string) =>
+    request<any[]>(
+      `/api/wishlist?resource=listings&userId=${encodeURIComponent(userId)}${
+        isUuid(categoryId) ? `&categoryId=${encodeURIComponent(categoryId as string)}` : ""
+      }`,
+    ),
+  createWishlistCategory: (userId: string, name: string) =>
+    request<any>("/api/wishlist", {
+      method: "POST",
+      body: JSON.stringify({ action: "create-category", user_id: userId, name }),
+    }),
+  renameWishlistCategory: (categoryId: string, name: string) =>
+    request<any>("/api/wishlist", {
+      method: "PATCH",
+      body: JSON.stringify({ categoryId, name }),
+    }),
+  deleteWishlistCategory: (categoryId: string) =>
+    request<boolean>("/api/wishlist", {
+      method: "DELETE",
+      body: JSON.stringify({ categoryId }),
+    }),
+  removeWishlistItem: (userId: string, listingId: string, categoryId?: string) =>
+    request<boolean>("/api/wishlist", {
+      method: "DELETE",
+      body: JSON.stringify({ userId, listingId, categoryId }),
+    }),
+  guestBookings: (userId: string, label: "upcoming" | "completed" | "cancelled") =>
+    request<any[]>(
+      `/api/bookings?role=guest&userId=${encodeURIComponent(userId)}&label=${label}&limit=50`,
+    ),
+  updateBookingDates: (bookingId: string, checkIn: Date, checkOut: Date) =>
+    request<any>("/api/bookings", {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: "dates",
+        bookingId,
+        checkIn: checkIn.toISOString(),
+        checkOut: checkOut.toISOString(),
+      }),
+    }),
+  updateBookingGuests: (bookingId: string, guests: { adults: number; children: number; pets?: number }) =>
+    request<any>("/api/bookings", {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: "guests",
+        bookingId,
+        adults: guests.adults,
+        children: guests.children,
+        pets: guests.pets ?? 0,
+      }),
+    }),
+  updateBookingStatus: (bookingId: string, status: "pending" | "confirmed" | "cancelled", reason?: string) =>
+    request<any>("/api/bookings", {
+      method: "PATCH",
+      body: JSON.stringify({ action: "status", bookingId, status, reason }),
+    }),
+};

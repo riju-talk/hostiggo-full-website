@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Heart, Star, Wifi, Car, Coffee, Zap, Droplets, UtensilsCrossed, CheckCircle, Clock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import type { Property } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
 export default function PropertyCardList({ property }: PropertyCardListProps) {
   const [liked, setLiked] = useState(property.isFavorite ?? false);
   const [imgErr, setImgErr] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const discount = property.originalPrice
     ? Math.round(((property.originalPrice - property.price) / property.originalPrice) * 100)
@@ -31,7 +31,7 @@ export default function PropertyCardList({ property }: PropertyCardListProps) {
   return (
     <div
       className="bg-white rounded-[2rem] p-3 flex flex-col sm:flex-row gap-4 sm:gap-6 cursor-pointer group transition-all duration-200 border border-gray-100 hover:shadow-md"
-      onClick={() => navigate(`/property/${property.id}`)}
+      onClick={() => router.push(`/property/${property.id}`)}
     >
       {/* Image Container */}
       <div className="relative flex-shrink-0 w-full sm:w-[280px] h-[200px] sm:h-auto rounded-[1.5rem] overflow-hidden">
