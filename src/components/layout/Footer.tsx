@@ -1,18 +1,38 @@
 import Link from "next/link";
 import { Globe, IndianRupee, Facebook, Twitter, Instagram, Home } from "lucide-react";
 
-const footerSections = [
+type FooterLink = { label: string; href: string };
+
+const footerSections: { title: string; links: FooterLink[] }[] = [
   {
     title: "Hosting",
-    links: ["Become a host", "Hosting resources", "Add new services", "Community", "Earnings & payouts"],
+    links: [
+      { label: "Become a host", href: "#" },
+      { label: "Hosting resources", href: "#" },
+      { label: "Add new services", href: "#" },
+      { label: "Community", href: "#" },
+      { label: "Earnings & payouts", href: "#" },
+    ],
   },
   {
     title: "Support",
-    links: ["Help centre", "Contact support", "Safety information", "Report an issue", "FAQs"],
+    links: [
+      { label: "Help centre", href: "#" },
+      { label: "Contact support", href: "mailto:support@hostiggo.com" },
+      { label: "Safety information", href: "#" },
+      { label: "Report an issue", href: "#" },
+      { label: "FAQs", href: "#" },
+    ],
   },
   {
     title: "Legal",
-    links: ["Terms & policies", "Privacy policy", "Cookie policy", "Report an issue", "FAQs"],
+    links: [
+      { label: "Terms & policies", href: "/terms" },
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Cancellation & refunds", href: "/cancellation" },
+      { label: "Cookie policy", href: "/cookies" },
+      { label: "FAQs", href: "#" },
+    ],
   },
 ];
 
@@ -56,11 +76,24 @@ export default function Footer() {
             <div key={section.title}>
               <h3 className="font-semibold text-gray-800 text-sm mb-4">{section.title}</h3>
               <ul className="space-y-2.5">
-                {section.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-gray-500 hover:text-blue-600 text-[13px] transition-colors">{link}</a>
-                  </li>
-                ))}
+                {section.links.map((link) => {
+                  const isInternal = link.href.startsWith("/");
+                  const className =
+                    "text-gray-500 hover:text-blue-600 text-[13px] transition-colors";
+                  return (
+                    <li key={`${section.title}-${link.label}`}>
+                      {isInternal ? (
+                        <Link href={link.href} className={className}>
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <a href={link.href} className={className}>
+                          {link.label}
+                        </a>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
