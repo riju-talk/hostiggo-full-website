@@ -8,6 +8,7 @@ import React, {
   useRef,
   ReactNode,
   useEffect,
+  useMemo,
 } from 'react';
 import type { Property, SearchFilters, SortOption, GuestCount } from '@/types';
 import { api, mapListingToProperty } from '@/lib/api';
@@ -284,8 +285,32 @@ export function ListingFilterProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Sort is applied client-side over the already-loaded results so changing
+  // the sort reorders instantly (the API doesn't sort).
+  const sortedProperties = useMemo(() => {
+    const list = [...properties];
+    switch (sort) {
+      case 'price_asc':
+        return list.sort((a, b) => a.price - b.price);
+      case 'price_desc':
+        return list.sort((a, b) => b.price - a.price);
+      case 'top_rated':
+        return list.sort((a, b) => b.rating - a.rating);
+      case 'most_popular':
+        return list.sort((a, b) => b.reviewCount - a.reviewCount);
+      case 'newest':
+        return list.sort((a, b) => Number(b.isNew) - Number(a.isNew));
+      case 'best_value':
+        return list.sort(
+          (a, b) => b.rating / (b.price || 1) - a.rating / (a.price || 1),
+        );
+      default:
+        return list;
+    }
+  }, [properties, sort]);
+
   const state: ListingState = {
-    properties,
+    properties: sortedProperties,
     loading,
     error,
     filters,

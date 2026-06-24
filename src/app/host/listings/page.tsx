@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { MapPin, Star, Pencil, SlidersHorizontal } from 'lucide-react';
 import HostDashboardShell, { DashboardHeading } from '../_components/HostDashboardShell';
 import { cn } from '@/lib/utils';
@@ -80,6 +82,12 @@ const STATUS_LABEL: Record<Listing['status'], string> = {
 };
 
 export default function MyListingsPage() {
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('created') === '1') {
+      toast.success('Listing submitted! It will appear here once reviewed.');
+    }
+  }, []);
+
   return (
     <HostDashboardShell active="listings">
       <DashboardHeading

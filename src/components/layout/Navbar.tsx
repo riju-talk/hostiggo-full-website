@@ -21,6 +21,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getStoredUserId, AUTH_USER_ID_KEY, AUTH_PHONE_KEY } from '@/lib/api';
 
 const CURRENCIES = [
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
@@ -40,10 +41,9 @@ const CURRENCIES = [
   { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
 ];
 
-// Mock auth state — replace with real context when backend is ready
-const IS_SIGNED_IN = true;
+// Signed-in user display (avatar only until profile fetch is wired).
 const USER = {
-  name: 'Bajpai Lehri',
+  name: 'Account',
   avatar: 'https://i.pravatar.cc/150?img=11',
 };
 
@@ -197,8 +197,26 @@ const MENU_GROUPS: MenuItem[][] = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  // Signed-out by default; flips on mount if a user id is stored (avoids
+  // showing a logged-in state to brand-new visitors / hydration mismatch).
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsSignedIn(Boolean(getStoredUserId()));
+  }, []);
+
+  const handleSignOut = () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(AUTH_USER_ID_KEY);
+      window.localStorage.removeItem(AUTH_PHONE_KEY);
+    }
+    setIsSignedIn(false);
+    setProfileOpen(false);
+    setMobileOpen(false);
+    router.push('/signin');
+  };
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -247,7 +265,7 @@ export default function Navbar() {
               <ChevronDown className="w-3 h-3 text-gray-400" />
             </button>
 
-            {IS_SIGNED_IN ? (
+            {isSignedIn ? (
               <>
                 <button
                   className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors ml-1"
@@ -306,10 +324,7 @@ export default function Navbar() {
                       <div className="h-px bg-gray-100 mx-3" />
                       <div className="p-3">
                         <button
-                          onClick={() => {
-                            setProfileOpen(false);
-                            router.push('/signin');
-                          }}
+                          onClick={handleSignOut}
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
@@ -366,7 +381,7 @@ export default function Navbar() {
             <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-2.5 font-medium">
               <Globe className="w-4 h-4 text-gray-500" /> English
             </button>
-            {IS_SIGNED_IN ? (
+            {isSignedIn ? (
               <>
                 <Link
                   href="/wishlist"
@@ -391,10 +406,7 @@ export default function Navbar() {
                 </Link>
                 <div className="px-4 pt-2">
                   <button
-                    onClick={() => {
-                      setMobileOpen(false);
-                      router.push('/signin');
-                    }}
+                    onClick={handleSignOut}
                     className="w-full border border-red-200 text-red-500 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-red-50"
                   >
                     <LogOut className="w-4 h-4" /> Sign out

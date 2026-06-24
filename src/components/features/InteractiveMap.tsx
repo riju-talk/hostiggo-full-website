@@ -208,17 +208,28 @@ export default function InteractiveMap({
         style={{ minHeight: 400 }}
       />
 
-      {/* Loading overlay */}
-      {!mapLoaded && (
+      {/* Loading / unavailable overlay */}
+      {!apiKey ? (
         <div className="absolute inset-0 bg-blue-50 rounded-2xl flex items-center justify-center">
-          <div className="text-center">
-            <div
-              className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"
-              style={{ borderWidth: 3 }}
-            />
-            <p className="text-sm font-semibold text-blue-600">Loading map…</p>
+          <div className="text-center px-6">
+            <p className="text-sm font-semibold text-gray-700">Map unavailable</p>
+            <p className="text-xs text-gray-500 mt-1 max-w-[220px]">
+              The map can&apos;t load right now. Browse the list of stays instead.
+            </p>
           </div>
         </div>
+      ) : (
+        !mapLoaded && (
+          <div className="absolute inset-0 bg-blue-50 rounded-2xl flex items-center justify-center">
+            <div className="text-center">
+              <div
+                className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"
+                style={{ borderWidth: 3 }}
+              />
+              <p className="text-sm font-semibold text-blue-600">Loading map…</p>
+            </div>
+          </div>
+        )
       )}
 
       {/* Property popup card */}

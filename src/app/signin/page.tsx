@@ -177,11 +177,11 @@ export default function SignInPage() {
         {/* Terms */}
         <p className="text-center text-[11px] text-gray-400 leading-relaxed">
           By continuing, you agree to Hostiggo's{' '}
-          <a href="#" className="text-blue-500 hover:underline">
+          <a href="/terms" className="text-blue-500 hover:underline">
             Terms and Conditions
           </a>{' '}
           and{' '}
-          <a href="#" className="text-blue-500 hover:underline">
+          <a href="/privacy" className="text-blue-500 hover:underline">
             Privacy Policy
           </a>
         </p>

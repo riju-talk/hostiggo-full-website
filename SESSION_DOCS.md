@@ -164,6 +164,28 @@ Shared: `src/app/host/_components/HostDashboardShell.tsx` (sidebar + topbar + Da
 > design (`6c3e...`) parked; richer one is `/host/calendar`.
 > Next phase per workflow: polish pass, then wire functionality (data → API → context).
 
+### UX audit — A-phase fixes (branch `ui-changes`)
+Full audit in `~/.claude/plans/okay-act-as-a-partitioned-dewdrop.md`. Implemented:
+- **A1** Navbar no longer hardcodes signed-in; `isSignedIn` derives from `getStoredUserId()`
+  (signed-out visitors see Sign in / New user). Sign out clears stored auth.
+- **A2** `HostDashboardShell` now has a mobile hamburger + slide-in drawer (was no mobile nav);
+  Create Listing + account reachable on mobile.
+- **A3** Wizard "Finish" routes to `/host/listings?created=1` (toast) instead of dead-ending.
+- **A5** Home shows empty/error state + "Try again"; property page shows "No reviews yet"
+  instead of an all-4.5 breakdown with 0 reviews.
+- **A6** Search **Sort** now reorders results client-side (`ListingFilterContext` useMemo).
+- **A7** Maps degrade gracefully when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is unset (property +
+  InteractiveMap show a fallback / "Open in Google Maps" instead of an infinite spinner).
+- **A8** Wizard "Save & Exit" → host dashboard; removed the duplicate "Overview" sidebar item.
+- **A9** aria-labels on dashboard icon buttons + menu; support textarea label associated.
+- **A11** sign-in Terms/Privacy → `/terms` `/privacy`; support Submit gives a toast.
+- Verified live: signed-out nav, mobile drawer, wizard Finish, no errors, tsc clean.
+
+Remaining (lower priority, not yet done): A4 calendar/photos still have decorative-only
+controls; A6 dates/guests/amenities not yet sent to `/api/search` (only sort wired);
+A5 wishlist/my-memories signed-out prompts; A10 remaining placeholder labeling (refer code,
+"4/10 photos"). These fold into the functionality phase.
+
 ### Functionality — step 1: navigation wired (done)
 Connected the new pages into the existing site (entry points; internal nav already worked):
 - `Navbar`: "List your property" (desktop ×2 + mobile) now → `/host/list/property-type`

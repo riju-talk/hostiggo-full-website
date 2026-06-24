@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { AlertTriangle, Lightbulb, Smile, UserPlus, X, Lock, ChevronDown, type LucideIcon } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -76,11 +77,12 @@ export default function SupportPage() {
               </div>
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-800">
+                  <label htmlFor="feedback-text" className="block text-sm font-bold text-gray-800">
                     Describe your suggestion / issue
                   </label>
                   <div className="relative">
                     <textarea
+                      id="feedback-text"
                       rows={6}
                       maxLength={1000}
                       value={text}
@@ -98,7 +100,18 @@ export default function SupportPage() {
                     <Lock className="w-4 h-4" />
                     Your feedback is encrypted and secure
                   </div>
-                  <button className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  <button
+                    onClick={() => {
+                      if (!text.trim()) {
+                        toast.error('Please add a few details first.');
+                        return;
+                      }
+                      toast.success('Thanks! Your feedback has been received.');
+                      setText('');
+                      setActive(null);
+                    }}
+                    className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
                     Submit Feedback
                   </button>
                 </div>

@@ -25,8 +25,7 @@ export default function LocationPage() {
               <input
                 id="address-search"
                 type="text"
-                defaultValue="Connaught Place, New Delhi"
-                placeholder="Enter Address"
+                placeholder="Enter your property address"
                 className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
               />
             </div>
@@ -94,9 +93,9 @@ export default function LocationPage() {
               </button>
               {/* Hint */}
               <div className="absolute bottom-6 left-6 px-4 py-2 rounded-lg border border-white/40 shadow-sm flex items-center gap-2 bg-white/70 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
                 <span className="text-xs font-medium text-gray-700">
-                  Drag map to adjust position
+                  Map preview
                 </span>
               </div>
             </div>

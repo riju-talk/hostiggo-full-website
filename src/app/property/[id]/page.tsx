@@ -368,15 +368,32 @@ function PropertyMap({ property }: { property: Property }) {
         style={{ height: 280 }}
       >
         <div ref={mapRef} className="w-full h-full" />
-        {!loaded && (
-          <div className="absolute inset-0 bg-blue-50 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-7 h-7 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-[12px] text-blue-500 font-medium">
-                Loading map…
+        {!apiKey ? (
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute inset-0 bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors"
+          >
+            <div className="text-center px-4">
+              <MapPin className="w-7 h-7 text-blue-500 mx-auto mb-2" />
+              <p className="text-[13px] text-gray-700 font-semibold">
+                Map preview unavailable
               </p>
+              <p className="text-[12px] text-blue-600 mt-1">Open in Google Maps →</p>
             </div>
-          </div>
+          </a>
+        ) : (
+          !loaded && (
+            <div className="absolute inset-0 bg-blue-50 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-7 h-7 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-[12px] text-blue-500 font-medium">
+                  Loading map…
+                </p>
+              </div>
+            </div>
+          )
         )}
       </div>
       <a
@@ -1551,7 +1568,21 @@ export default function PropertyDetailsPage() {
                 Ratings &amp; reviews
               </h2>
 
+              {/* Empty state when this property has no reviews yet */}
+              {reviews.length === 0 && (
+                <div className="py-8 text-center">
+                  <Star className="w-8 h-8 text-gray-200 fill-gray-200 mx-auto mb-3" />
+                  <p className="text-[14px] font-semibold text-gray-700">
+                    No reviews yet
+                  </p>
+                  <p className="text-[12px] text-gray-400 mt-1">
+                    Be the first to stay and share your experience.
+                  </p>
+                </div>
+              )}
+
               {/* Overall rating + breakdown */}
+              {reviews.length > 0 && (
               <div className="flex items-start gap-5 mb-5">
                 {/* Score */}
                 <div className="text-center flex-shrink-0">
@@ -1588,6 +1619,7 @@ export default function PropertyDetailsPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Preview reviews (3-column card layout) */}
               {reviews.length > 0 && (
