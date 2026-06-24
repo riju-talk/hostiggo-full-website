@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 
 // A real user row from the DB — used only as a dev shortcut so the host area
 // is reviewable locally (production sign-in is phone OTP). Never shown in prod.
-const DEMO_HOST_ID = 'a1e587bc-0fc9-454e-90c8-bc0d22ee5330';
+const DEMO_HOST_ID = '7701820c-50fe-4ee8-a4e6-e18068c1fb0b';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
 export default function HostLayout({ children }: { children: React.ReactNode }) {

@@ -109,6 +109,44 @@ export const HotelServiceApi = {
     return (data || []) as ListingRow[];
   },
 
+  // Listings owned by a given user (resolves host_uuid via the host table).
+  getListingsByHost: async (userId: string): Promise<any[]> => {
+    const { data: host, error: hostError } = await supabase
+      .from('host')
+      .select('host_uuid')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (hostError) {
+      console.error('Fetch error (getListingsByHost/host):', hostError);
+      throw hostError;
+    }
+    if (!host?.host_uuid) return [];
+
+    const { data, error } = await supabase
+      .from('listings')
+      .select(
+        `
+        listing_id,
+        title,
+        price_weekday,
+        is_active,
+        lisiting_status,
+        locations (state, district),
+        listing_media (media_url, is_cover)
+      `,
+      )
+      .eq('host_uuid', host.host_uuid)
+      .order('listing_id', { ascending: false })
+      .limit(60);
+
+    if (error) {
+      console.error('Fetch error (getListingsByHost/listings):', error);
+      throw error;
+    }
+    return data || [];
+  },
+
   filterHotels: async (
     filters: SearchFilters,
     page: number = 0,
