@@ -777,7 +777,7 @@ function BookingWidget({
         amount: total,
       });
       setShowSuccess(true);
-      toast.success('Reservation requested! The host will confirm shortly.');
+      toast.success('Booking confirmed! See it in your bookings.');
       setTimeout(() => setShowSuccess(false), 4000);
     } catch (err) {
       console.error('[property] booking failed:', err);
@@ -919,7 +919,7 @@ function BookingWidget({
 
       {showSuccess ? (
         <div className="w-full bg-emerald-500 text-white py-3 rounded-xl font-bold text-[14px] flex items-center justify-center gap-2">
-          <CheckCircle className="w-5 h-5" /> Reservation requested!
+          <CheckCircle className="w-5 h-5" /> Booking confirmed!
         </div>
       ) : (
         <button

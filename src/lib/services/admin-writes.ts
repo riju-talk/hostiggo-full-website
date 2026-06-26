@@ -87,11 +87,57 @@ export async function createBooking(input: {
       num_children: numChildren,
       nom_guests: numAdults + numChildren,
       amount: input.amount ?? null,
-      status_id: 1, // pending — awaiting host approval
+      // booking_status only defines 2=CONFIRMED, 3=CANCELLED (no pending row),
+      // so a new reservation is created as CONFIRMED.
+      status_id: 2,
       host_uuid: listing.host_uuid,
       booked_at: new Date().toISOString(),
     })
     .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ── Feedback ─────────────────────────────────────────────────────────────────
+export async function createFeedback(input: {
+  userId?: string | null;
+  type: string;
+  description: string;
+  category?: string | null;
+  rating?: number | null;
+  comment?: string | null;
+}) {
+  const { data, error } = await supabaseAdmin
+    .from("feedback")
+    .insert({
+      user_id: input.userId ?? null,
+      type: input.type,
+      description: input.description,
+      category: input.category ?? null,
+      rating: input.rating ?? null,
+      comment: input.comment ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ── User profile ─────────────────────────────────────────────────────────────
+export async function updateUserProfile(
+  userId: string,
+  patch: Partial<{ name: string; email: string; phone: string; age: number; emergency_contact: string }>,
+) {
+  const clean: Record<string, any> = { updated_at: new Date().toISOString() };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v !== undefined && v !== null && v !== "") clean[k] = v;
+  }
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .update(clean)
+    .eq("user_id", userId)
+    .select("user_id, name, email, phone, age, profile_pic_url, is_verified, emergency_contact")
     .single();
   if (error) throw error;
   return data;

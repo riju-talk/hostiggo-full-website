@@ -265,6 +265,19 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  submitFeedback: (payload: {
+    userId?: string | null;
+    type: string;
+    description: string;
+    category?: string | null;
+    rating?: number | null;
+  }) =>
+    request<any>(`/api/feedback`, { method: "POST", body: JSON.stringify(payload) }),
+  updateProfile: (userId: string, patch: Record<string, any>) =>
+    request<any>(`/api/users`, {
+      method: "PATCH",
+      body: JSON.stringify({ action: "update-profile", userId, patch }),
+    }),
   locations: (limit = 40, q?: string) => request<any[]>(`/api/locations?limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
   propertyDetail: (id: string) => request<any>(`/api/hotels/${id}`),
   amenities: () => request<{ amenity_id: number; name: string }[]>("/api/amenities"),
