@@ -7,6 +7,7 @@ import { Mail, Phone, ChevronDown, ArrowLeft } from 'lucide-react';
 const authBg = '/auth-bg.jpg';
 import { cn } from '@/lib/utils';
 import { api, AUTH_PHONE_KEY, normalizePhone } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 type Mode = 'phone' | 'email';
@@ -42,6 +43,13 @@ export default function SignInPage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleGoogleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/` },
+    });
   };
 
   return (
@@ -137,7 +145,12 @@ export default function SignInPage() {
           {mode === 'phone' ? (
             <>
               {/* Google */}
-              <button className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                aria-label="Continue with Google"
+                className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+              >
                 <GoogleIcon />
               </button>
               {/* Apple */}

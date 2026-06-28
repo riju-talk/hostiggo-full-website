@@ -11,6 +11,7 @@ import {
   AUTH_USER_ID_KEY,
   normalizePhone,
 } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 const OTP_LENGTH = 6;
@@ -106,11 +107,19 @@ export default function OTPPageContent() {
     }
     setVerifying(true);
     try {
-      const data = await api.verifyOtp(
-        window.localStorage.getItem(AUTH_PHONE_KEY) || normalizePhone(value),
-        code,
-      );
-      const userId = data?.user?.id || data?.session?.user?.id;
+      const phone =
+        window.localStorage.getItem(AUTH_PHONE_KEY) || normalizePhone(value);
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone,
+        token: code,
+        type: 'sms',
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const userId = data?.user?.id ?? data?.session?.user?.id;
       if (userId) window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
       router.push('/');
     } catch (error) {

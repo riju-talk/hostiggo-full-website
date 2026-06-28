@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ListingFilterProvider } from '@/context/ListingFilterContext';
 import { Toaster } from 'sonner';
+import AuthProvider from '@/components/providers/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'Hostiggo - Find Your Perfect Stay',
@@ -16,10 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ListingFilterProvider>
-          <Toaster position="top-center" richColors closeButton />
-          {children}
-        </ListingFilterProvider>
+        <AuthProvider>
+          <ListingFilterProvider>
+            <Toaster position="top-center" richColors closeButton />
+            {children}
+          </ListingFilterProvider>
+        </AuthProvider>
       </body>
     </html>
   );
