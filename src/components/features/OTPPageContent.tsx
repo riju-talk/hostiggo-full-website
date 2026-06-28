@@ -13,6 +13,7 @@ import {
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const OTP_LENGTH = 6;
 const RESEND_DELAY = 20;
@@ -20,9 +21,13 @@ const RESEND_DELAY = 20;
 export default function OTPPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { signIn } = useAuth();
 
   const mode = (searchParams?.get('mode') as 'phone' | 'email') ?? 'phone';
   const value = searchParams?.get('value') ?? '83183 XXXXX';
+  // Where to land after a successful verify (e.g. back to the property the user
+  // was about to book). Falls back to home.
+  const redirect = searchParams?.get('redirect') || '/';
 
   const maskedValue =
     mode === 'phone'
@@ -107,21 +112,15 @@ export default function OTPPageContent() {
     }
     setVerifying(true);
     try {
-      const phone =
-        window.localStorage.getItem(AUTH_PHONE_KEY) || normalizePhone(value);
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone,
-        token: code,
-        type: 'sms',
-      });
-
-      if (error) {
-        throw new Error(error.message);
+      const data = await api.verifyOtp(
+        window.localStorage.getItem(AUTH_PHONE_KEY) || normalizePhone(value),
+        code,
+      );
+      const userId = data?.user?.id || data?.session?.user?.id;
+      if (userId) {
+        await signIn(userId);
       }
-
-      const userId = data?.user?.id ?? data?.session?.user?.id;
-      if (userId) window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
-      router.push('/');
+      router.push(redirect);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Invalid OTP');
     } finally {

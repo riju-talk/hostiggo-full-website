@@ -25,8 +25,7 @@ export default function LocationPage() {
               <input
                 id="address-search"
                 type="text"
-                defaultValue="Connaught Place, New Delhi"
-                placeholder="Enter Address"
+                placeholder="Enter your property address"
                 className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
               />
             </div>
@@ -49,7 +48,11 @@ export default function LocationPage() {
               </div>
             </div>
             <div className="pt-2 border-t border-gray-200">
-              <button className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1.5">
+              <button
+                disabled
+                title="Coming soon"
+                className="text-sm font-medium text-gray-400 flex items-center gap-1.5 cursor-not-allowed"
+              >
                 <Pencil className="w-4 h-4" />
                 Adjust pin location
               </button>
@@ -68,35 +71,47 @@ export default function LocationPage() {
 
         {/* Right: map */}
         <div className="md:col-span-8 order-1 md:order-2">
-          <div className="relative w-full rounded-2xl overflow-hidden shadow-card border border-gray-200 bg-gray-100 group">
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-card border border-gray-200 bg-gray-100">
             <div
-              className="relative h-[480px] md:h-[600px] cursor-crosshair bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+              className="relative h-[480px] md:h-[600px] cursor-default bg-cover bg-center"
               style={{
                 backgroundImage:
                   "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200&h=900&fit=crop&q=80')",
               }}
             >
-              {/* Zoom controls */}
+              {/* Zoom controls (interactive map coming soon) */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
-                <button className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors">
-                  <Plus className="w-5 h-5 text-gray-700" />
+                <button
+                  disabled
+                  title="Coming soon"
+                  className="w-10 h-10 bg-white/70 rounded-lg flex items-center justify-center shadow-md cursor-not-allowed opacity-60"
+                >
+                  <Plus className="w-5 h-5 text-gray-500" />
                 </button>
-                <button className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors">
-                  <Minus className="w-5 h-5 text-gray-700" />
+                <button
+                  disabled
+                  title="Coming soon"
+                  className="w-10 h-10 bg-white/70 rounded-lg flex items-center justify-center shadow-md cursor-not-allowed opacity-60"
+                >
+                  <Minus className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
               {/* Center pin */}
               <MapPin className="w-10 h-10 text-red-500 fill-red-500 drop-shadow-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full" />
               {/* Use current location */}
-              <button className="absolute bottom-6 right-6 bg-white px-5 py-3 rounded-full flex items-center gap-2 shadow-lg hover:bg-gray-50 transition-all active:scale-95 text-sm font-medium text-blue-600">
+              <button
+                disabled
+                title="Coming soon"
+                className="absolute bottom-6 right-6 bg-white/80 px-5 py-3 rounded-full flex items-center gap-2 shadow-lg text-sm font-medium text-gray-400 cursor-not-allowed"
+              >
                 <LocateFixed className="w-5 h-5" />
                 Use current location
               </button>
               {/* Hint */}
               <div className="absolute bottom-6 left-6 px-4 py-2 rounded-lg border border-white/40 shadow-sm flex items-center gap-2 bg-white/70 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
                 <span className="text-xs font-medium text-gray-700">
-                  Drag map to adjust position
+                  Map preview
                 </span>
               </div>
             </div>

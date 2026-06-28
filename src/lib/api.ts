@@ -197,6 +197,25 @@ export function mapBooking(item: any) {
 export const getStoredUserId = () =>
   typeof window === "undefined" ? null : window.localStorage.getItem(AUTH_USER_ID_KEY);
 
+export const setStoredUserId = (userId: string) => {
+  if (typeof window !== "undefined") window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
+};
+
+export const clearStoredAuth = () => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(AUTH_USER_ID_KEY);
+  window.localStorage.removeItem(AUTH_PHONE_KEY);
+};
+
+export type CurrentUser = {
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  profile_pic_url: string | null;
+  is_verified: boolean | null;
+};
+
 export const normalizePhone = (phone: string) => {
   const digits = phone.replace(/\D/g, "");
   if (digits.length === 10) return `+91${digits}`;
@@ -208,24 +227,48 @@ const isUuid = (value?: string) =>
   Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
 
 export const api = {
+  getUser: (userId: string) =>
+    request<CurrentUser | null>(`/api/users?userId=${encodeURIComponent(userId)}`),
   hotels: () => request<any[]>("/api/hotels"),
   hotelsByLocation: (locationId: string | number, limit = 4) =>
     request<any[]>(`/api/hotels?locationId=${locationId}&limit=${limit}`),
+  hostListings: (userId: string) =>
+    request<any[]>(`/api/host/listings?userId=${encodeURIComponent(userId)}`),
+  hostBookings: (userId: string) =>
+    request<any[]>(`/api/bookings?role=host&userId=${encodeURIComponent(userId)}`),
+  bookingDetail: (id: string) =>
+    request<any>(`/api/bookings/details?id=${encodeURIComponent(id)}`),
+  hostCalendar: (listingId: string | number, start: string, end: string) =>
+    request<{ entries: any[]; bookings: any[] }>(
+      `/api/host/calendar?listingId=${encodeURIComponent(String(listingId))}&start=${start}&end=${end}`,
+    ),
   locations: (limit = 40, q?: string) => request<any[]>(`/api/locations?limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
   propertyDetail: (id: string) => request<any>(`/api/hotels/${id}`),
-  search: async (filters: SearchFilters, destination: string, page = 0, pageSize = 20) => {
+  amenities: () => request<{ amenity_id: number; name: string }[]>("/api/amenities"),
+  search: async (
+    filters: SearchFilters,
+    destination: string,
+    page = 0,
+    pageSize = 20,
+    extra?: {
+      startDate?: string | null;
+      endDate?: string | null;
+      totalGuests?: number;
+      amenities?: number[];
+    },
+  ) => {
     const payload = {
       page,
       pageSize,
       filters: {
-        startDate: null,
-        endDate: null,
+        startDate: extra?.startDate ?? null,
+        endDate: extra?.endDate ?? null,
         district: destination?.trim() || undefined,
         minPrice: filters.priceMin > 0 ? filters.priceMin : undefined,
         maxPrice: filters.priceMax < 100000 ? filters.priceMax : undefined,
-        totalGuests: undefined,
+        totalGuests: extra?.totalGuests,
         ratings: filters.guestRating != null ? [filters.guestRating] : [],
-        amenities: [] as number[],
+        amenities: extra?.amenities ?? ([] as number[]),
         roomTypes: filters.propertyTypes,
       },
     };

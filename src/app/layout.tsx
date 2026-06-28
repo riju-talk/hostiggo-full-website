@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
 import { ListingFilterProvider } from '@/context/ListingFilterContext';
 import { Toaster } from 'sonner';
 import AuthProvider from '@/components/providers/AuthProvider';

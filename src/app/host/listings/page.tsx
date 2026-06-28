@@ -1,9 +1,16 @@
 'use client';
 
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MapPin, Star, Pencil, SlidersHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
+import { MapPin, Pencil, Plus, RotateCcw } from 'lucide-react';
 import HostDashboardShell, { DashboardHeading } from '../_components/HostDashboardShell';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+
+const FALLBACK_IMAGE =
+  'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&h=450&fit=crop&q=80';
 
 type Listing = {
   id: string;
@@ -11,161 +18,183 @@ type Listing = {
   location: string;
   price: number;
   image: string;
-  status: 'incomplete' | 'live' | 'paused';
-  rating?: number;
-  reviews?: number;
-  note: string;
-  cta: string;
+  active: boolean;
 };
 
-const LISTINGS: Listing[] = [
-  {
-    id: '1',
-    name: 'Ocean Breeze Villa',
-    location: 'Malibu, California',
-    price: 450,
-    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&h=450&fit=crop&q=80',
-    status: 'incomplete',
-    note: 'Missing photos & ID',
-    cta: 'Finish Listing',
-  },
-  {
-    id: '2',
-    name: 'Summit Peak Retreat',
-    location: 'Aspen, Colorado',
-    price: 320,
-    image: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=600&h=450&fit=crop&q=80',
-    status: 'live',
-    rating: 4.92,
-    reviews: 128,
-    note: 'Active Booking',
-    cta: 'Edit Listing',
-  },
-  {
-    id: '3',
-    name: 'Industrial Arts Loft',
-    location: 'Brooklyn, New York',
-    price: 185,
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=450&fit=crop&q=80',
-    status: 'live',
-    rating: 4.85,
-    reviews: 94,
-    note: 'Next: Oct 12',
-    cta: 'Edit Listing',
-  },
-  {
-    id: '4',
-    name: 'Desert Mirage House',
-    location: 'Scottsdale, Arizona',
-    price: 275,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&h=450&fit=crop&q=80',
-    status: 'paused',
-    rating: 4.7,
-    reviews: 56,
-    note: 'Paused',
-    cta: 'Reactivate',
-  },
-];
-
-const STATUS_DOT: Record<Listing['status'], string> = {
-  incomplete: 'bg-red-500 animate-pulse',
-  live: 'bg-green-500',
-  paused: 'bg-gray-400',
+const coverImage = (row: any): string => {
+  const media = Array.isArray(row?.listing_media) ? row.listing_media : [];
+  const cover = media.find((m: any) => m?.is_cover)?.media_url;
+  return cover || media[0]?.media_url || FALLBACK_IMAGE;
 };
 
-const STATUS_LABEL: Record<Listing['status'], string> = {
-  incomplete: 'Incomplete',
-  live: 'Live',
-  paused: 'Paused',
+const mapListing = (row: any): Listing => {
+  const loc = row?.locations ?? {};
+  return {
+    id: String(row.listing_id),
+    name: row.title?.trim() || 'Untitled listing',
+    location: [loc.district, loc.state].filter(Boolean).join(', ') || 'Location pending',
+    price: Number(row.price_weekday ?? 0),
+    image: coverImage(row),
+    active: Boolean(row.is_active),
+  };
 };
+
+const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+
+function ListingSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl shadow-card overflow-hidden border border-gray-100">
+      <div className="aspect-[4/3] bg-gray-100 animate-pulse" />
+      <div className="p-6 space-y-3">
+        <div className="h-4 bg-gray-100 rounded animate-pulse w-2/3" />
+        <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
+        <div className="h-3 bg-gray-100 rounded animate-pulse w-1/3" />
+      </div>
+    </div>
+  );
+}
 
 export default function MyListingsPage() {
+  const { userId } = useAuth();
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    setError(false);
+    try {
+      const rows = await api.hostListings(userId);
+      setListings(rows.map(mapListing));
+    } catch (err) {
+      console.error('[host/listings] load failed:', err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('created') === '1') {
+      toast.success('Listing submitted! It will appear here once reviewed.');
+    }
+  }, []);
+
   return (
     <HostDashboardShell active="listings">
       <DashboardHeading
         title="Your Listings"
         subtitle="Manage your properties, update availability, and maximize your earnings from one central dashboard."
         actions={
-          <button className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-all">
-            <SlidersHorizontal className="w-5 h-5" />
-            Sort: Priority
-          </button>
+          <Link
+            href="/host/list/property-type"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            New listing
+          </Link>
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {LISTINGS.map((l) => (
-          <article
-            key={l.id}
-            className={cn(
-              'group relative bg-white rounded-2xl shadow-card overflow-hidden border border-gray-100 hover:shadow-card-hover transition-all duration-300',
-              l.status === 'paused' && 'opacity-80 hover:opacity-100',
-            )}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ListingSkeleton key={i} />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-card py-16 px-6 text-center">
+          <p className="text-4xl mb-3">😕</p>
+          <h2 className="text-lg font-bold text-gray-800 mb-1">Couldn&apos;t load your listings</h2>
+          <p className="text-sm text-gray-500 mb-6">Something went wrong. Please try again.</p>
+          <button
+            onClick={load}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
           >
-            <div className="relative aspect-[4/3] overflow-hidden">
-              <img
-                src={l.image}
-                alt={l.name}
+            <RotateCcw className="w-4 h-4" /> Try again
+          </button>
+        </div>
+      ) : listings.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-card py-16 px-6 text-center">
+          <p className="text-4xl mb-3">🏠</p>
+          <h2 className="text-lg font-bold text-gray-800 mb-1">No listings yet</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Create your first listing to start hosting and earning.
+          </p>
+          <Link
+            href="/host/list/property-type"
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
+          >
+            <Plus className="w-4 h-4" /> Create a listing
+          </Link>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-gray-400 mb-4">{listings.length} listings</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {listings.map((l) => (
+              <article
+                key={l.id}
                 className={cn(
-                  'w-full h-full object-cover transition-all duration-500',
-                  l.status === 'paused' && 'grayscale group-hover:grayscale-0',
+                  'group relative bg-white rounded-2xl shadow-card overflow-hidden border border-gray-100 hover:shadow-card-hover transition-all duration-300',
+                  !l.active && 'opacity-80 hover:opacity-100',
                 )}
-              />
-              <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
-                <span className={cn('w-2 h-2 rounded-full', STATUS_DOT[l.status])} />
-                <span className="text-xs font-semibold text-gray-700">
-                  {STATUS_LABEL[l.status]}
-                </span>
-              </div>
-              <div className="absolute inset-0 bg-blue-900/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Link
-                  href="/host/listings/manage"
-                  className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold shadow-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2"
-                >
-                  <Pencil className="w-5 h-5" />
-                  {l.cta}
-                </Link>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-bold text-gray-800 truncate pr-4">
-                  {l.name}
-                </h3>
-                <span className="text-lg font-bold text-blue-600">
-                  ${l.price}
-                  <span className="text-sm text-gray-400 font-normal">/nt</span>
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 flex items-center gap-1 mb-6">
-                <MapPin className="w-4 h-4" />
-                {l.location}
-              </p>
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                {l.rating ? (
-                  <div className="flex items-center gap-1.5">
-                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                    <span className="text-sm font-bold text-gray-800">{l.rating}</span>
-                    <span className="text-xs text-gray-400">({l.reviews})</span>
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <img
+                    src={l.image}
+                    alt={l.name}
+                    loading="lazy"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src !== FALLBACK_IMAGE) img.src = FALLBACK_IMAGE;
+                    }}
+                    className={cn(
+                      'w-full h-full object-cover transition-all duration-500',
+                      !l.active && 'grayscale group-hover:grayscale-0',
+                    )}
+                  />
+                  <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <span
+                      className={cn('w-2 h-2 rounded-full', l.active ? 'bg-green-500' : 'bg-gray-400')}
+                    />
+                    <span className="text-xs font-semibold text-gray-700">
+                      {l.active ? 'Live' : 'Paused'}
+                    </span>
                   </div>
-                ) : (
-                  <span className="w-9 h-9 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600">
-                    75%
-                  </span>
-                )}
-                <p
-                  className={cn(
-                    'text-xs font-bold',
-                    l.status === 'incomplete' ? 'text-red-500' : 'text-gray-500',
-                  )}
-                >
-                  {l.note}
-                </p>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+                  <div className="absolute inset-0 bg-blue-900/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <Link
+                      href="/host/listings/manage"
+                      className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold shadow-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2"
+                    >
+                      <Pencil className="w-5 h-5" />
+                      {l.active ? 'Edit' : 'Reactivate'}
+                    </Link>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2 gap-3">
+                    <h3 className="text-lg font-bold text-gray-800 truncate">{l.name}</h3>
+                    <span className="text-lg font-bold text-blue-600 whitespace-nowrap">
+                      {inr(l.price)}
+                      <span className="text-sm text-gray-400 font-normal">/nt</span>
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <MapPin className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{l.location}</span>
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
     </HostDashboardShell>
   );
 }

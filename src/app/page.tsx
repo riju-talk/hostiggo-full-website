@@ -18,12 +18,15 @@ type HomeSection = {
 export default function HomePage() {
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let mounted = true;
 
     const loadHomeData = async () => {
       setIsLoading(true);
+      setError(false);
       try {
         const locations = await api.locations(40);
         const selected = locations
@@ -55,10 +58,11 @@ export default function HomePage() {
           );
           setIsLoading(false);
         }
-      } catch (error) {
-        console.error('[home] failed to load Supabase listings:', error);
+      } catch (err) {
+        console.error('[home] failed to load Supabase listings:', err);
         if (mounted) {
           setSections([]);
+          setError(true);
           setIsLoading(false);
         }
       }
@@ -69,7 +73,7 @@ export default function HomePage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [reloadToken]);
 
   return (
     <div className="min-h-screen bg-[#f0f2f5]">
@@ -91,6 +95,29 @@ export default function HomePage() {
               isLoading={true}
               itemsPerRow={4}
             />
+          </>
+        ) : sections.length === 0 ? (
+          <>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-card py-16 px-6 text-center">
+              <p className="text-4xl mb-3">{error ? '😕' : '🏠'}</p>
+              <h2 className="text-lg font-bold text-gray-800 mb-1">
+                {error ? "We couldn't load stays right now" : 'No stays to show yet'}
+              </h2>
+              <p className="text-sm text-gray-500 mb-6">
+                {error
+                  ? 'Something went wrong reaching our listings. Please try again.'
+                  : 'Check back soon — new homestays are added regularly.'}
+              </p>
+              {error && (
+                <button
+                  onClick={() => setReloadToken((t) => t + 1)}
+                  className="btn-primary"
+                >
+                  Try again
+                </button>
+              )}
+            </div>
+            <CTABanner />
           </>
         ) : (
           <>

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Mail, Phone, ChevronDown, ArrowLeft } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Mail, Phone, ChevronDown, ArrowLeft, Compass } from 'lucide-react';
 const authBg = '/auth-bg.jpg';
 import { cn } from '@/lib/utils';
 import { api, AUTH_PHONE_KEY, normalizePhone } from '@/lib/api';
@@ -12,12 +12,18 @@ import { toast } from 'sonner';
 
 type Mode = 'phone' | 'email';
 
-export default function SignInPage() {
+function SignInContent() {
   const [mode, setMode] = useState<Mode>('phone');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Optional return path: set when a gated action (e.g. booking) sent the user
+  // here, so we can bring them back after signing in — or when they skip.
+  const redirect = searchParams?.get('redirect') || '';
+
+  const handleSkip = () => router.push(redirect || '/');
 
   const handleSendOTP = async () => {
     if (mode === 'phone' && phone.trim().length < 10) return;
@@ -34,7 +40,9 @@ export default function SignInPage() {
       await api.sendOtp(normalizedPhone);
       window.localStorage.setItem(AUTH_PHONE_KEY, normalizedPhone);
       router.push(
-        `/otp?mode=${mode}&value=${encodeURIComponent(normalizedPhone)}`,
+        `/otp?mode=${mode}&value=${encodeURIComponent(normalizedPhone)}${
+          redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''
+        }`,
       );
     } catch (error) {
       toast.error(
@@ -127,10 +135,15 @@ export default function SignInPage() {
         {/* Send OTP button */}
         <button
           onClick={handleSendOTP}
-          disabled={sending}
-          className="w-full py-3.5 bg-[#1B3FA0] hover:bg-[#162e82] active:scale-[0.98] text-white font-semibold rounded-xl transition-all text-[15px] shadow-sm mb-5"
+          disabled={sending || mode === 'email'}
+          title={mode === 'email' ? 'Email sign-in is coming soon' : undefined}
+          className="w-full py-3.5 bg-[#1B3FA0] hover:bg-[#162e82] active:scale-[0.98] text-white font-semibold rounded-xl transition-all text-[15px] shadow-sm mb-5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1B3FA0] disabled:active:scale-100"
         >
-          {sending ? 'Sending...' : 'Send OTP'}
+          {sending
+            ? 'Sending...'
+            : mode === 'email'
+              ? 'Email sign-in coming soon'
+              : 'Send OTP'}
         </button>
 
         {/* Divider */}
@@ -146,15 +159,18 @@ export default function SignInPage() {
             <>
               {/* Google */}
               <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                aria-label="Continue with Google"
-                className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+                disabled
+                title="Coming soon"
+                className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center shadow-sm opacity-50 cursor-not-allowed"
               >
                 <GoogleIcon />
               </button>
               {/* Apple */}
-              <button className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
+              <button
+                disabled
+                title="Coming soon"
+                className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center shadow-sm opacity-50 cursor-not-allowed"
+              >
                 <AppleIcon />
               </button>
             </>
@@ -168,7 +184,11 @@ export default function SignInPage() {
                 <Phone className="w-5 h-5 text-blue-600" />
               </button>
               {/* Apple */}
-              <button className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
+              <button
+                disabled
+                title="Coming soon"
+                className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center shadow-sm opacity-50 cursor-not-allowed"
+              >
                 <AppleIcon />
               </button>
             </>
@@ -187,19 +207,36 @@ export default function SignInPage() {
           </p>
         )}
 
+        {/* Skip / browse as guest */}
+        <button
+          onClick={handleSkip}
+          className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-xl border border-gray-200 text-gray-600 font-medium text-[14px] hover:bg-gray-50 transition-all"
+        >
+          <Compass className="w-4 h-4" />
+          Skip for now — browse properties
+        </button>
+
         {/* Terms */}
         <p className="text-center text-[11px] text-gray-400 leading-relaxed">
           By continuing, you agree to Hostiggo's{' '}
-          <a href="#" className="text-blue-500 hover:underline">
+          <a href="/terms" className="text-blue-500 hover:underline">
             Terms and Conditions
           </a>{' '}
           and{' '}
-          <a href="#" className="text-blue-500 hover:underline">
+          <a href="/privacy" className="text-blue-500 hover:underline">
             Privacy Policy
           </a>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100" />}>
+      <SignInContent />
+    </Suspense>
   );
 }
 

@@ -24,7 +24,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AUTH_PHONE_KEY, AUTH_USER_ID_KEY } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 const CURRENCIES = [
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
@@ -44,7 +44,11 @@ const CURRENCIES = [
   { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
 ];
 
-const FALLBACK_AVATAR = 'https://i.pravatar.cc/150?img=11';
+// Signed-in user display (avatar only until profile fetch is wired).
+const USER = {
+  name: 'Account',
+  avatar: 'https://i.pravatar.cc/150?img=11',
+};
 
 function CurrencyDropdown() {
   const [open, setOpen] = useState(false);
@@ -149,11 +153,14 @@ interface MenuItem {
   to?: string;
   danger?: boolean;
   action?: () => void;
+  // Placeholder for a feature that isn't built yet — rendered disabled with a
+  // "Soon" pill so the slot stays in the menu without being a dead link.
+  soon?: boolean;
 }
 
 const MENU_GROUPS: MenuItem[][] = [
   [
-    { icon: <MessageCircle className="w-4 h-4" />, label: 'Chats', to: '#' },
+    { icon: <MessageCircle className="w-4 h-4" />, label: 'Chats', soon: true },
     {
       icon: <Heart className="w-4 h-4" />,
       label: 'Wishlists',
@@ -198,16 +205,12 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { user, session, isLoading, signOut } = useSupabaseAuth();
-  const isSignedIn = !!session;
-  const userName = user?.user_metadata?.name || user?.phone || 'Guest';
-  const userAvatar = user?.user_metadata?.avatar_url || FALLBACK_AVATAR;
+  const { isAuthenticated, user, signOut } = useAuth();
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setProfileOpen(false);
     setMobileOpen(false);
-    await signOut();
-    router.push('/signin');
+    signOut();
   };
 
   // Close profile dropdown on outside click
@@ -257,7 +260,7 @@ export default function Navbar() {
               <ChevronDown className="w-3 h-3 text-gray-400" />
             </button>
 
-            {isSignedIn ? (
+            {isAuthenticated ? (
               <>
                 <button
                   className="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-colors ml-1"
@@ -273,8 +276,8 @@ export default function Navbar() {
                     className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-offset-1 ring-transparent hover:ring-blue-400 transition-all"
                   >
                     <img
-                      src={userAvatar}
-                      alt={userName}
+                      src={user?.profile_pic_url || USER.avatar}
+                      alt={user?.name || USER.name}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -292,22 +295,35 @@ export default function Navbar() {
                         <div key={gi}>
                           {gi > 0 && <div className="h-px bg-gray-100 mx-3" />}
                           <div className="py-1.5">
-                            {group.map((item) => (
-                              <Link
-                                key={item.label}
-                                href={item.to ?? '#'}
-                                onClick={() => {
-                                  item.action?.();
-                                  setProfileOpen(false);
-                                }}
-                                className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                              >
-                                <span className="text-gray-400">
-                                  {item.icon}
-                                </span>
-                                <span>{item.label}</span>
-                              </Link>
-                            ))}
+                            {group.map((item) =>
+                              item.soon ? (
+                                <div
+                                  key={item.label}
+                                  aria-disabled="true"
+                                  title="Coming soon"
+                                  className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-gray-400 cursor-default select-none"
+                                >
+                                  <span className="text-gray-300">{item.icon}</span>
+                                  <span>{item.label}</span>
+                                  <span className="ml-auto text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full">
+                                    Soon
+                                  </span>
+                                </div>
+                              ) : (
+                                <Link
+                                  key={item.label}
+                                  href={item.to ?? '#'}
+                                  onClick={() => {
+                                    item.action?.();
+                                    setProfileOpen(false);
+                                  }}
+                                  className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <span className="text-gray-400">{item.icon}</span>
+                                  <span>{item.label}</span>
+                                </Link>
+                              ),
+                            )}
                           </div>
                         </div>
                       ))}
@@ -316,9 +332,7 @@ export default function Navbar() {
                       <div className="h-px bg-gray-100 mx-3" />
                       <div className="p-3">
                         <button
-                          onClick={() => {
-                            void handleSignOut();
-                          }}
+                          onClick={handleSignOut}
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
@@ -375,7 +389,7 @@ export default function Navbar() {
             <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-2.5 font-medium">
               <Globe className="w-4 h-4 text-gray-500" /> English
             </button>
-            {isSignedIn ? (
+            {isAuthenticated ? (
               <>
                 <Link
                   href="/wishlist"
@@ -400,9 +414,7 @@ export default function Navbar() {
                 </Link>
                 <div className="px-4 pt-2">
                   <button
-                    onClick={() => {
-                      void handleSignOut();
-                    }}
+                    onClick={handleSignOut}
                     className="w-full border border-red-200 text-red-500 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:bg-red-50"
                   >
                     <LogOut className="w-4 h-4" /> Sign out

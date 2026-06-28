@@ -37,6 +37,8 @@ import Footer from '@/components/layout/Footer';
 import { cn } from '@/lib/utils';
 import type { Property, AmenityItem, Review, Host } from '@/types';
 import { api, mapListingToProperty } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 const FALLBACK =
   'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&h=600&fit=crop&q=80';
@@ -152,6 +154,7 @@ function GalleryModal({
             <button
               key={i}
               onClick={() => setIdx(i)}
+              aria-label={`View photo ${i + 1}`}
               className={cn(
                 'w-14 h-10 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all',
                 i === idx
@@ -161,7 +164,7 @@ function GalleryModal({
             >
               <img
                 src={img}
-                alt=""
+                alt={`Photo ${i + 1}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
@@ -368,15 +371,32 @@ function PropertyMap({ property }: { property: Property }) {
         style={{ height: 280 }}
       >
         <div ref={mapRef} className="w-full h-full" />
-        {!loaded && (
-          <div className="absolute inset-0 bg-blue-50 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-7 h-7 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-[12px] text-blue-500 font-medium">
-                Loading map…
+        {!apiKey ? (
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute inset-0 bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors"
+          >
+            <div className="text-center px-4">
+              <MapPin className="w-7 h-7 text-blue-500 mx-auto mb-2" />
+              <p className="text-[13px] text-gray-700 font-semibold">
+                Map preview unavailable
               </p>
+              <p className="text-[12px] text-blue-600 mt-1">Open in Google Maps →</p>
             </div>
-          </div>
+          </a>
+        ) : (
+          !loaded && (
+            <div className="absolute inset-0 bg-blue-50 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-7 h-7 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-[12px] text-blue-500 font-medium">
+                  Loading map…
+                </p>
+              </div>
+            </div>
+          )
         )}
       </div>
       <a
@@ -693,6 +713,8 @@ function BookingWidget({
   const [guests, setGuests] = useState(1);
   const [dateError, setDateError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -722,6 +744,13 @@ function BookingWidget({
 
   const validateAndBook = () => {
     setDateError('');
+    // Booking requires an account — guests can browse freely, but must sign in
+    // to reserve. Send them to sign-in and bring them back to this property.
+    if (!isAuthenticated) {
+      toast('Please sign in to book this stay.');
+      router.push(`/signin?redirect=${encodeURIComponent(`/property/${property.id}`)}`);
+      return;
+    }
     if (!checkIn || !checkOut) {
       setDateError('Please select check-in and check-out dates.');
       return;
@@ -1551,7 +1580,21 @@ export default function PropertyDetailsPage() {
                 Ratings &amp; reviews
               </h2>
 
+              {/* Empty state when this property has no reviews yet */}
+              {reviews.length === 0 && (
+                <div className="py-8 text-center">
+                  <Star className="w-8 h-8 text-gray-200 fill-gray-200 mx-auto mb-3" />
+                  <p className="text-[14px] font-semibold text-gray-700">
+                    No reviews yet
+                  </p>
+                  <p className="text-[12px] text-gray-400 mt-1">
+                    Be the first to stay and share your experience.
+                  </p>
+                </div>
+              )}
+
               {/* Overall rating + breakdown */}
+              {reviews.length > 0 && (
               <div className="flex items-start gap-5 mb-5">
                 {/* Score */}
                 <div className="text-center flex-shrink-0">
@@ -1588,6 +1631,7 @@ export default function PropertyDetailsPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Preview reviews (3-column card layout) */}
               {reviews.length > 0 && (

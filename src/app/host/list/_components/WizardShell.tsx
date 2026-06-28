@@ -53,7 +53,7 @@ export default function WizardShell({
         </Link>
         <div className="flex items-center gap-3">
           <Link
-            href="/"
+            href="/host/listings"
             className="text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors px-4 py-2 rounded-lg"
           >
             Save &amp; Exit
@@ -118,7 +118,10 @@ export default function WizardShell({
           <button
             type="button"
             disabled={nextDisabled}
-            onClick={() => next && router.push(`/host/list/${next.slug}`)}
+            aria-disabled={nextDisabled}
+            onClick={() =>
+              router.push(next ? `/host/list/${next.slug}` : '/host/listings?created=1')
+            }
             className={cn(
               'rounded-xl px-10 py-3 text-sm font-bold text-white transition-all active:scale-95 shadow-md',
               nextDisabled

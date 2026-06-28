@@ -164,6 +164,63 @@ Shared: `src/app/host/_components/HostDashboardShell.tsx` (sidebar + topbar + Da
 > design (`6c3e...`) parked; richer one is `/host/calendar`.
 > Next phase per workflow: polish pass, then wire functionality (data → API → context).
 
+### UX audit — A-phase fixes (branch `ui-changes`)
+Full audit in `~/.claude/plans/okay-act-as-a-partitioned-dewdrop.md`. Implemented:
+- **A1** Navbar no longer hardcodes signed-in; `isSignedIn` derives from `getStoredUserId()`
+  (signed-out visitors see Sign in / New user). Sign out clears stored auth.
+- **A2** `HostDashboardShell` now has a mobile hamburger + slide-in drawer (was no mobile nav);
+  Create Listing + account reachable on mobile.
+- **A3** Wizard "Finish" routes to `/host/listings?created=1` (toast) instead of dead-ending.
+- **A5** Home shows empty/error state + "Try again"; property page shows "No reviews yet"
+  instead of an all-4.5 breakdown with 0 reviews.
+- **A6** Search **Sort** now reorders results client-side (`ListingFilterContext` useMemo).
+- **A7** Maps degrade gracefully when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is unset (property +
+  InteractiveMap show a fallback / "Open in Google Maps" instead of an infinite spinner).
+- **A8** Wizard "Save & Exit" → host dashboard; removed the duplicate "Overview" sidebar item.
+- **A9** aria-labels on dashboard icon buttons + menu; support textarea label associated.
+- **A11** sign-in Terms/Privacy → `/terms` `/privacy`; support Submit gives a toast.
+- Verified live: signed-out nav, mobile drawer, wizard Finish, no errors, tsc clean.
+
+Remaining (lower priority, not yet done): A4 calendar/photos still have decorative-only
+controls; A6 dates/guests/amenities not yet sent to `/api/search` (only sort wired);
+A5 wishlist/my-memories signed-out prompts; A10 remaining placeholder labeling (refer code,
+"4/10 photos"). These fold into the functionality phase.
+
+### B-phase — B5: auth foundation (branch `functionality-phase`)
+Real sign-in is Supabase **phone OTP (SMS)** and anonymous sign-in is disabled, so there's no
+way to complete sign-in in local dev. Built the auth foundation so everything else (B1–B4) can
+attach to a real user:
+- `src/context/AuthContext.tsx` — `AuthProvider` + `useAuth()`; resolves the current user from
+  the stored id via `/api/users?userId=` (anon read works). Exposes `user, userId, loading,
+  isAuthenticated, signIn(id), signOut(), refresh()`. Mounted in `app/layout.tsx`.
+- `src/lib/api.ts` — added `api.getUser(id)`, `setStoredUserId`, `clearStoredAuth`, `CurrentUser`.
+- `Navbar` now consumes `useAuth()` (real name/avatar; signed-out CTAs otherwise) — replaces the
+  A1 local effect. `OTPPageContent` calls `signIn()` on verify so production sign-in flows in.
+- `src/app/host/layout.tsx` — gates ALL `/host/*` (dashboard + wizard): loader while resolving,
+  friendly "Sign in to manage your hosting" screen when signed out, children when authed.
+  Includes a **dev-only** "Continue as demo host" button (NODE_ENV check) using a real DB user
+  (`a1e587bc-…`, Rijusmit) so the host area stays reviewable without SMS.
+- `HostDashboardShell` uses the real user (avatar/name) + context `signOut`.
+- Verified: signed-out gate + nav; demo login → dashboard renders + nav flips signed-in; tsc clean.
+
+> Next B steps depend on this: B2 (wizard → create listing under the user), B3 (dashboards real
+> data for the user), B1 (booking attached to user), B4 (forms persist).
+
+### B-phase — B3: dashboards on real data (in progress)
+NOTE: anon key can READ but **cannot write** (`42501 permission denied for sequence
+listings_listing_id_seq`) → B2 (create listing) needs a server-side service-role key, deferred.
+Demo host = `7701820c` (Sanjay): owns 148 listings + 55 bookings, so dashboards have real data.
+- **My Listings** (`/host/listings`): live via `getListingsByHost(userId)` (resolves host_uuid
+  through the `host` table) → `/api/host/listings`. Loading skeletons, empty + error/retry;
+  broken cover images fall back. Shows real title / ₹ price / location / Live-Paused status.
+- **Bookings** (`/host/bookings`): live via existing `bookingsAPI.fetchBookings` →
+  `/api/bookings?role=host` → `api.hostBookings()`. Bucketed Today/Upcoming/Past by date with
+  real counts; shows property, date range, guests, ₹ amount. Loading/empty/error states.
+- Still mock (this branch): Earnings, Reviews, Calendar, Booking details/cancel (need
+  aggregation / guest-user joins). B1/B2/B4 still pending.
+- Verified live with the demo host: 60 listings render, 55 bookings (Today 4 / Upcoming 1 /
+  Past 50). tsc clean, no console errors.
+
 ### Functionality — step 1: navigation wired (done)
 Connected the new pages into the existing site (entry points; internal nav already worked):
 - `Navbar`: "List your property" (desktop ×2 + mobile) now → `/host/list/property-type`
