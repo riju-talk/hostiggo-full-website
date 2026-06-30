@@ -33,6 +33,9 @@ export default function AuthProvider({
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        window.localStorage.setItem("hostiggo:user-id", session.user.id);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -40,7 +43,14 @@ export default function AuthProvider({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.id) {
+        window.localStorage.setItem("hostiggo:user-id", session.user.id);
+      } else if (event === "SIGNED_OUT") {
+        window.localStorage.removeItem("hostiggo:user-id");
+        window.localStorage.removeItem("hostiggo:phone");
+        window.localStorage.removeItem("hostiggo:email");
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -53,6 +63,7 @@ export default function AuthProvider({
     await supabase.auth.signOut();
     window.localStorage.removeItem("hostiggo:user-id");
     window.localStorage.removeItem("hostiggo:phone");
+    window.localStorage.removeItem("hostiggo:email");
   }, []);
 
   return (
