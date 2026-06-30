@@ -22,14 +22,12 @@ function OnboardingContent() {
       router.push('/signin');
       return;
     }
-    if (user?.name) {
-      router.push('/');
-    }
+    if (user?.name) setName(user.name);
     if (user?.email) setEmail(user.email);
     if (user?.phone) setPhone(user.phone);
   }, [user, userId, isAuthenticated, authLoading, router]);
 
-  if (authLoading || (user?.name)) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-10 h-10 border-4 border-[#1B3FA0] border-t-transparent rounded-full animate-spin" />
